@@ -4,17 +4,18 @@ namespace ECommerce.Api.Services;
 
 public sealed class OrderService
 {
-    private static readonly Dictionary<string, decimal> PromoCodes = new(StringComparer.Ordinal)
-    {
-        ["DISCOUNT20"] = 20m,
-        ["DISCOUNT 10"] = 10m
-    };
-
     private readonly IStockService _stockService;
+    private readonly IPromoCodeProvider _promoCodeProvider;
 
     public OrderService(IStockService stockService)
+        : this(stockService, new InMemoryPromoCodeProvider())
+    {
+    }
+
+    public OrderService(IStockService stockService, IPromoCodeProvider promoCodeProvider)
     {
         _stockService = stockService;
+        _promoCodeProvider = promoCodeProvider;
     }
 
     public OrderResult CreateOrder(OrderRequest request)
@@ -48,7 +49,7 @@ public sealed class OrderService
         var promoDiscount = 0m;
         if (!string.IsNullOrWhiteSpace(promoCode))
         {
-            if (!PromoCodes.TryGetValue(promoCode, out promoDiscount))
+            if (!_promoCodeProvider.TryGetDiscount(promoCode, out promoDiscount))
             {
                 errors.Add("Le code promo est invalide");
             }
